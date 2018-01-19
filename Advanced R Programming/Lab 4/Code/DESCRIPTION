@@ -1,0 +1,17 @@
+Package: Lab4
+Type: Package
+Title: Lab4
+Version: 1.0.0
+Date: 2017-09-11
+Author: Ugurcan Lacin, Fahad Hameed
+Maintainer: Any issues, contact: <ugurcanlacin@gmail.com>
+Description: Lab4
+License: GPL-3
+Depends: R (>= 2.10)
+URL: https://github.com/ugurcanlacin/Lab4
+LazyData: true
+RoxygenNote: 6.0.1
+Suggests: testthat, ggplot2,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

@@ -1,0 +1,11 @@
+Package: UgurcanFahaadLab3
+Type: Package
+Title: Euclidean and Dijkstra Algorithms
+Version: 1.0
+Date: 2017-09-13
+Author: Fahad Hameed and Ugurcan Lacin
+Maintainer: <fahha780@student.liu.se>
+Description: Lab 3 Implementation for Euclidean and Dikjstra Algorithm
+License: Apache
+RoxygenNote: 6.0.1
+Suggests: testthat

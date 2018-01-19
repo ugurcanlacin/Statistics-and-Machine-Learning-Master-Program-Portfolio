@@ -1,0 +1,18 @@
+Package: nasaAsteroid
+Type: Package
+Title: nasaAsteroid
+Version: 1.0.0
+Date: 2017-09-11
+Author: Ugurcan Lacin, Fahad Hameed
+Maintainer: Any issues, contact: <ugurcanlacin@gmail.com>
+Description: A package which analysis Nasa Open API.
+License: GPL-3
+Depends: R (>= 2.10),httr
+URL: https://github.com/ugurcanlacin/nasaAsteroid
+LazyData: true
+Imports: methods
+RoxygenNote: 6.0.1
+Suggests: testthat, ggplot2,httr,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

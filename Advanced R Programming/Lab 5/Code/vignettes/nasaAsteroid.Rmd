@@ -1,0 +1,49 @@
+---
+title: "Nasa Asteroid"
+author: "Fahad Ugurcan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+In this package we are implementing a package which is calling a *Web API* called Nasa Asteroid using R programming language. The package calls nasa asteroid api which is nasa api called from the site <https://api.nasa.gov/#getting-started>. For this purpose we first got are API key from *nasa.gov* and then after authentication we called are API in are package. 
+  
+The first step in the implementation is importing a library called httr which is designed to map closely to the underlying http protocol.
+
+```{r}
+library(httr)
+r <- GET("https://api.nasa.gov/neo/rest/v1/neo/browse")
+```
+
+
+As a second step we are initializing are function and creating a dataframe called df. 
+ 
+We are calling field in the data frame from are NASA ASTEROID API which are:
+
+- Name
+- absolute_magnitude_h
+- estimated_diameter_kilometers_min
+- estimated_diameter_kilometers_max
+- is_potentially_hazardous_asteroid
+- close_approach_data_date
+- orbital_period
+
+The package also include different functions which are using data from Nasa Asteroid API for data analysis and perform different function on the data. Which are as follow:
+
+- hazardousAsteroids()
+- summary()
+
+## Shiny Application
+
+Shiny is an R package that makes it easy to build interactive web apps straight from R. You can host standalone apps on a webpage or embed them in R Markdown documents or build dashboards. You can also extend your Shiny apps with CSS themes, htmlwidgets, and JavaScript actions.
+
+We are using shiny R pakage in another package to call the data from our nasa asteroid api and show ot in graphical interface with interactive widgets we are using drop down and histogram graph to represent data.
+
+We will be using the following to make our shiny application work properly:
+
+- library(shiny)
+- devtools::install_github("ugurcanlacin/nasaAsteroid")
+- library(nasaAsteroid)
