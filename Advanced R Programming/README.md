@@ -8,14 +8,14 @@ In this course, I had 7 lab project that I had to implement everything in R prog
 
 Implemented given instructions which contain mathematical operations, vector, matrix, data frame, list, basic statistics.
 
-### Lab 2
+[Lab 2](Lab%202/)
 
-### Lab 3
+[Lab 3](Lab%203/)
 
-### Lab 4
+[Lab 4](Lab%204/)
 
-### Lab 5
+[Lab 5](Lab%205/)
 
-### Lab 6
+[Lab 6](Lab%206/)
 
-### Lab 7
+[Lab 7](Lab%207/)
