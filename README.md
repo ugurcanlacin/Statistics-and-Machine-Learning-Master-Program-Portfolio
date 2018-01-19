@@ -1,4 +1,4 @@
-# Statistiscs and Machine Learning Master Program Portfolio
+# Statistics and Machine Learning Master Program Portfolio
 
 I am Ugurcan Lacin and doing a Masters’ degree in Statistics and Data Mining in Linköping University. I hold a Bachelor’s degree in Software Engineering. 
 
