@@ -26,7 +26,8 @@ When I started this program, I had already software development experience but n
 
 [Lab 3](Lab%203/)
 
-- Created first R package in R. Implemented Euclidean and Dijkstra algorithms.
+- Created first R package in R.  
+- Implemented Euclidean and Dijkstra algorithms.
 - Used roxygen2 for code documentation.
 - Included test suits.
 - Integrated TravisCI.
