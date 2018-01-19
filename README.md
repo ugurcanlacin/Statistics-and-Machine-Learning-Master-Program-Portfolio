@@ -14,7 +14,7 @@ I am taking courses each period and doing lots of lab projects. I will clearly b
 
 #### Period 2
 
-- [Introduction to Machine Learning](/Semester%201/Advanced%20R%20Programming/)
+- [Introduction to Machine Learning](/Semester%201/Introduction%20to%20Machine%20Learning)
 
 ### Semester 2 (Spring)
 
