@@ -8,6 +8,8 @@ I am taking courses each period and doing lots of lab projects. I will clearly b
 
 ### Semester 1 (Fall)
 
+[https://github.com/ugurcanlacin/Statistics-and-Machine-Learning-Master-Program-Portfolio/tree/master/Advanced%20R%20Programming] (#Advanced R Programming)
+
 #### Period 1
 
 #### Period 2
