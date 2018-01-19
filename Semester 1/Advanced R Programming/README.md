@@ -11,7 +11,7 @@ When I started this program, I had already software development experience but n
 - Buil-Fail tracking of packages via Travis CI
 - Writing unit tests
 - Writing both code and user documentations
-- Data processing via web APIs by appliying various packages
+- Data processing via web APIs by applying various packages
 - Implementations of many mathematical and statistical operations
 
 ## Labs
