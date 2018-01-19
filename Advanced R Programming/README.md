@@ -1,6 +1,6 @@
 # Advanced R Programming
 
-In this course, I had 7 lab project that I had to implement everything in R programming language. You can see below briefly what each project contains.
+In this course, I had 7 lab projects that I had to implement everything in R programming language. You can see below briefly what each project contains.
 
 ## Labs
 
