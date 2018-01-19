@@ -8,12 +8,13 @@ I am taking courses each period and doing lots of lab projects. I will clearly b
 
 ### Semester 1 (Fall)
 
-- [Advanced R Programming](/Semester%201/Advanced%20R%20Programming/)
-
-
 #### Period 1
 
+- [Advanced R Programming](/Semester%201/Advanced%20R%20Programming/)
+
 #### Period 2
+
+- [Introduction to Machine Learning](/Semester%201/Advanced%20R%20Programming/)
 
 ### Semester 2 (Spring)
 
