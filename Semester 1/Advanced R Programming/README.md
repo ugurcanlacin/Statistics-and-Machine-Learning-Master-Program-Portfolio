@@ -1,6 +1,6 @@
 # Advanced R Programming
 
-In this course, I had 7 lab projects that I had to implement everything in R programming language. You can see below briefly what each project contains.
+In this course, I and [Fahad Hameed](https://github.com/fahad3h) had 7 lab projects that we had to implement everything in R programming language. You can see below briefly what each project contains.
 
 ## What I learned from this course?
 
