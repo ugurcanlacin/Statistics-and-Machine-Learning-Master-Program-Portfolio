@@ -1,0 +1,386 @@
+---
+title: "Multivariate Statistical Methods - Assignment 1"
+author: "Milda Poceviciute, Henrik Karlsson, Ugurcan Lacin and Ramon Laborda"
+date: "4 December 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+## a)
+
+Import data and calculate the Mahalanobis distance:
+
+```{r}
+df <- read.csv("./T1-9.dat", sep = "\t", header = FALSE)
+names(df) <- c("country", "m100", "m200", "m400", "m800", "m1500", "m3000", "marathon")
+
+X <- as.matrix(df[,2:8])
+X_avg <- colMeans(X)
+resX_avg <- t(t(X)-X_avg)
+
+# Compute Mahalanobis distance per row so there is a number per country
+D_ma <- resX_avg %*% solve(cov(X)) %*% t(resX_avg)
+dist <- diag(D_ma)
+
+ind <- which(dist %in% sort(dist, decreasing = TRUE)[1:5])
+countries3 <- df[ind,1]
+
+```
+
+We start off by constructing a chi-square plot of generalize distances to test bivariate normality. The data is bivariate normally distributed if the point form a straight line. If there is points with unusually large distances, these could be outliers and would be furthest away from the origo in the plot, but more formal test needs to be conducted in order to draw that conclusion. 
+
+```{r}
+orgi_order <- order(dist)
+order_dist <- sort(dist)
+len <- seq_along(order_dist)
+chi_plot <- qchisq(p = ((len - .5)/length(order_dist)), df = 2)
+
+df_plot <- data.frame(orgi_order, order_dist, chi_plot)
+
+library(ggplot2)
+ggplot(df_plot) +
+    geom_point(aes(x = chi_plot, y = order_dist)) +
+    #geom_abline(intercept = 0, slope = 1) +
+    labs(title = "Chi-square plot", x = "q", y = expression(paste(d^{2})))
+```
+
+In order to test for each observation without multiple testing correction procedure (we take $\alpha = 0.001$ for each test). We compare the Mahalanobis distance to the chi square distribution value (where $\alpha = 0.001$). Outliers will have distance greater than the chi square value indicating that they are unlikely to come form this distribution:
+
+```{r}
+# Chi square value with 
+c2 <- qchisq(.999, df=ncol(X)) 
+result_df <- data.frame(countries = df[,1],test_diff = dist-c2)
+outliers <- subset(result_df, result_df[,2]>0)
+```
+
+So after testing, we get that outliers are:
+
+```{r,echo=FALSE}
+outliers
+```
+
+Now, one way of doing multiple testing correction is to use $\alpha$ divided by the number of tests. The reasoning is that as we sum up 54 tests, the total confidence is not $(1-\alpha)$, but actually $(1-\alpha)^{54}$. We can asses this problem by taking $\alpha/54$:
+
+```{r}
+c3 <-qchisq(1 - (0.001/nrow(X)), df=ncol(X)) 
+result2_df <- data.frame(countries = df[,1],test_diff = dist-c3)
+outliers2 <- subset(result2_df, result2_df[,2]>0)
+```
+
+And therefore, we get that outliers are:
+
+```{r,echo=FALSE}
+outliers2
+```
+
+In the second test, our significance level was 54 times smaller than in the first test, so it's intuitive that smaller amount of countries were considered outliers. In fact, only one country is selected as an outlier in the latest test. In general, accounting for uncertainty coming from 54 tests is useful as the most extreme values are classified as outliers. However, in this case testing at 0.001 significance level is very extreme because $0.001 / 54$ goes close to zero. It is not reasonable to test at confidence level so close to 100% as then it is implied that the outcome is certain. At least in this case, the outcome is definiately not certain, so we would suggest to choose a larger $\alpha$ value.
+
+## b)
+
+Euclidean distance does not take into account the covariances of the variables and only base the distance measure on the distance from the mean ignoring the covariances (and variances). Therefore, if covariances across the countries are very different, Euclidean distance does not capture it. In contrast, Mahalanobis distance takes into account the covariances of the variables which means that extremely high or low covariance does not distort the results. This could explain why North Korea is not included into outliers based on Euclidean distance, but it is included in the outliers based on the Mahalanobis distance.
+
+
+# Question 2
+## a)
+
+Find and sketch the 95% confidence ellipse for the population means $\mu_1$ and $\mu_2$. Suppose it is known that $\mu_1$ = 190mm and $\mu_2$ = 275mm for male hook-billed kites. Are these plausible values for the mean tail length and mean wing length for female birds? Explain
+
+```{r, warnings = FALSE, message = FALSE}
+data <- read.delim("T5-12.DAT", header=FALSE,sep="")
+
+n <- nrow(data)
+
+# Compute colMeans
+dataMean <- (1/n) * t(data) %*% rep(1, n)
+# cov matrix (2-27)
+covm <- (1/(n-1)) * t(data) %*% 
+  (diag(n) - (1/n * matrix(rep(1, n), ncol = 1) %*% t(rep(1,n)))) %*% 
+  as.matrix(data)
+
+#plot the data
+plot(data, xlab = "Tail Length", ylab = "Wing Length")
+
+#plot the ellipse for female (first) and male
+radius <- sqrt(2 * (45-1) * qf(0.95, 2, 45-2)/(45*(45-2)))
+
+library(car)
+car::ellipse(center = as.vector(dataMean), shape = covm, radius = radius, col = 'red')
+car::ellipse(center = c(190, 275), shape = covm, radius = radius, col = 'blue')
+
+```
+
+The red ellipse is the 95% confidence interval ellipse for the sample mean for female birds. The mean values for the male birds are represented by the blue dot and ellipse. Since the blue dot, the given population mean for males, lies within the red ellipse, it's plausible that the population means do not differ for male and females birds.
+
+## b)
+
+Construct the simultaneous 95% $T^2$-intervals for $\mu_1$ and $\mu_2$ and the 95% Bonferroni intervals for $\mu_1$ and $\mu_2$. Compare the two sets of intervals. What advantage, if any, do the $T^2$-intervals have over the Bonferroni intervals?
+
+```{r}
+#Confidence intervals using T^2 Hotellings
+a <- matrix(c(1,0))
+c1 <- t(a) %*% cov(data) %*% a
+a2 <- matrix(c(0,1))
+c2 <- t(a2) %*% cov(data) %*% a2
+
+ci1A <- dataMean[1] - sqrt(((2*44) / (45-2) * 3.21 / 45 ) * c1)
+ci1B <- dataMean[1] + sqrt(((2*44) / (45-2) * 3.21 / 45 ) * c1)
+ci2A <- dataMean[2] - sqrt(((2*44) / (45-2) * 3.21 / 45 ) * c2)
+ci2B <- dataMean[2] + sqrt(((2*44) / (45-2) * 3.21 / 45 ) * c2)
+Hotellings <- list(TailLength =c(ci1A, ci1B) , WingLength=c(ci2A, ci2B))
+
+# Confidence intervals using Bonferroni
+Bf1A <- dataMean[1] - 2.32 * sqrt(cov(data)[1,1] / 45)
+Bf1B <- dataMean[1] + 2.32 * sqrt(cov(data)[1,1] / 45)
+Bf2A <- dataMean[2] - 2.32 * sqrt(cov(data)[2,2] / 45)
+Bf2B <- dataMean[2] +  2.32 * sqrt(cov(data)[2,2] / 45)
+Bonferroni <- list(TailLength =c(Bf1A, Bf1B) , WingLength=c(Bf2A, Bf2B))
+
+l <- list(Hotellings = Hotellings,
+          Bonferroni = Bonferroni)
+print(l)
+```
+
+The 95% confidence interval for mean of tail and wing length using Hotellings $T^2$:
+
+Tail Length: CI($\mu$)=(189.4247, 197.8198) 
+
+Wing Length: CI($\mu$)=(274.2602, 285.2954)
+
+&nbsp;
+
+The 95% confidence interval for mean of tail and wing length using Bonferroni:
+
+Tail Length: CI($\mu$)=(189.8227, 197.4217) 
+
+Wing Length: CI($\mu$)=(274.7835, 284.7721)
+
+As expected, the Bonferroni intervals are tighter than $T^2$, but the difference between the intevals is small.
+When the mean components is large, it is prefered to use a $T^2$-intervals.
+
+## c)
+Is the bivariate normal distribution a viable population model? Explain with reference to Q-Q plots and a scatter diagram.
+
+In the Q-Q plot below to the left the values lies well alongside the red line. The one to the right is more irregular but is still good. This would suggest that the bivariate normal distribution is a viable population model.
+
+```{r}
+#Q-Q
+par(mfrow=c(1,2))
+qqnorm(data[,1]); qqline(data[,1], col = 2)
+qqnorm(data[,2]); qqline(data[,2], col = 2)
+par(mfrow=(c(1,1)))
+
+library(ggplot2)
+ggplot(data, aes(x=V1, y=V2)) + 
+    geom_point() +
+    labs(x = "Tail Length", y = "Wing Length")
+```
+
+If we observe the scatter diagram above, we notice how de dots would match into an ellipse. That supports the assumption for viability of the bivariate normal distribution as a population model.
+
+# Question 3
+
+In this step, Egyptian skull measurements will be studied. This data set, published in 1905 and now taken from the heplots R-package.
+
+Researchers have suggested that a change in skull size over time is evidence of the interbreeding of a resident population with immigrant populations. Four measurements were made of male Egyptian skulls for three different time periods: period 1 is 4000 B.C., period 2 is 3300 B.C., and period 3 is 1850 B.C. The measured variables are
+
+$X_1$ = maximum breadth of skull ( mm)
+
+$X_2$ = basibregmatic height of skull ( mm)
+
+$X_3$ = basialveolar length of skull ( mm)
+
+$X_4$ = nasal height ofskull (mm)
+
+## a)
+
+The libraries to be used during the assignment are imported.
+
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+library(heplots)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+```
+
+&nbsp;
+
+Before working with the data we should investigate it. The data will be plotted with a combination of a scatter plot and correlation graph. In this graph will provide information about the correlation between variables as well as their distribution.
+
+&nbsp;
+
+```{r}
+data <- Skulls
+my_fn <- function(data, mapping, ...){
+  p <- ggplot(data = data, mapping = mapping) +
+  geom_point() +
+  geom_smooth(method=lm, fill="blue", color="blue", ...)
+  p
+}
+ggpairs(data[,2:5],columns = 1:4, lower = list(continuous = my_fn))
+```
+
+&nbsp;
+
+According to graph, the scatter plot don't contain any visual linear pattern and the density plot indicate that each variable is normal distributed. The correlation is close to zero between the different variables which indicates that the variables are linearly independent. 
+
+## b)
+
+In this part, manova() function will be used in the analysis and $\alpha=0.05$  will be used for evaluation.
+
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+a <- manova(cbind(mb,bh,bl,nh) ~ epoch, data)
+summary(a)
+```
+
+&nbsp;
+
+According to p value analysis, we can say that null hypothesis is rejected. The means differ.
+
+Additionally, we can analyze the results by applying different test types, such as, Hotelling-Lawley and Wilks'.
+
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+summary(a,test="Hotelling-Lawley")
+summary(a,test="Wilks")
+``` 
+ 
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+summary.aov(a)
+```
+
+&nbsp;
+
+We will interpret the p-value for each variable with $\alpha=0.05$ as confidence level. When we interpret the following data accordingly:
+
+* MB is significant
+* BH is significant, but it is close to the cut off.
+* BL highly significant
+* NH is not significant
+
+If the variable is significant, it means that the variance between the epochs is bigger than within the epoch which implies that there is a significant difference between the epochs.
+
+## c)
+
+We inspect the residuals whether they have mean 0. According to result they are close to zero, so we can accept them as zero.
+ 
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+colMeans(a$residuals) 
+```
+
+*Simultaneous Confidence Interval Calculation*
+
+```{r message=FALSE,warning=FALSE}
+# Simultaneous confidence interval
+
+w <- c(3061.067,3405.267,3505.967,1472.133) # taken from printed a variable
+epoches <- unique(data$epoch)
+n <- nrow(data)
+g <- length(epoches)
+p <- ncol(data[2:5])
+tResult <- 0.5002
+
+# Column means for  each epoch
+df <- data.frame(epoch = character(),mb = numeric(), bh = numeric(),bl = numeric(),nh = numeric())
+for(i in 1:g){
+  epoch <- epoches[[i]]
+  onlyChosenEpoch <- data[ data$epoch == epoch,]
+  columnMeans <- colMeans(onlyChosenEpoch[2:5])
+  row <- data.frame(epoch = epoch, mb = columnMeans["mb"],
+                    bh = columnMeans["bh"],bl = columnMeans["bl"],nh = columnMeans["nh"])
+  df <- rbind(df,row)
+}
+row.names(df) <- seq(nrow(df))
+
+
+results <- data.frame(upper = numeric(), under = numeric(), xki = character(),xki_value = numeric(), xli = character(), xli_value = numeric(),t_value = numeric(),wii = numeric(), value_after_wii = numeric())
+
+convertValuesToRow <- function(ith_Row,targetRow,variable,i,second_in_formula,third_in_formula){
+  subs <- ith_Row[variable] -  targetRow[variable]
+  under <- subs[1,1] + second_in_formula + third_in_formula
+  upper <- subs[1,1] - second_in_formula + third_in_formula
+  row <- data.frame(upper=upper, under=under, xki = paste(variable,"-",as.character(df[i,1])), xki_value = ith_Row[variable][1,1], xli = paste(variable,"-",as.character(targetRow[1,1])), xli_value = targetRow[variable][1,1], t_value = tResult, wii = ith_w, value_after_wii = third_in_formula)
+  return(row)
+}
+
+for(i in 1:4){
+  ith_Row <- df[i,]
+  indexes <- seq(nrow(df))
+  indexes <- indexes[which(!indexes==i)]
+  ith_w <- w[i]
+  
+  third_in_formula <- sqrt(ith_w/(n-g)*(1/4+1/5))
+  second_in_formula <- tResult
+  
+  for(z in 1:4){
+    row <- convertValuesToRow(ith_Row,df[indexes[z],],"mb",i,second_in_formula,third_in_formula)
+    results <- rbind(results, row)
+  }
+  for(z in 1:4){
+    row <- convertValuesToRow(ith_Row,df[indexes[z],],"bh",i,second_in_formula,third_in_formula)
+    results <- rbind(results, row)
+  }
+  for(z in 1:4){
+    row <- convertValuesToRow(ith_Row,df[indexes[z],],"bl",i,second_in_formula,third_in_formula)
+    results <- rbind(results, row)
+  }
+  for(z in 1:4){
+    row <- convertValuesToRow(ith_Row,df[indexes[z],],"nh",i,second_in_formula,third_in_formula)
+    results <- rbind(results, row)
+  }
+  
+}
+print(results)
+```
+ 
+&nbsp;
+
+Now, each residual variable is plotted with normal distribution line and its density line. So, it is possible to observe them if they deviate from normality as graphically.
+ 
+&nbsp;
+
+```{r message=FALSE,warning=FALSE}
+graphs <- list()
+for(i in 1:ncol(a$residuals)){
+    selectedColumn <- a$residuals[,i]
+    minColumn <- min(selectedColumn)
+    maxColumn <- max(selectedColumn)
+    meanColumn <- mean(selectedColumn)
+    sdColumn <- sd(selectedColumn)
+    range <- 1:150
+    range <- eval(substitute(seq(as.numeric(minColumn) - as.numeric(sdColumn),
+                                 as.numeric(maxColumn), by = 0.01),
+                             list(i=i,minColumn=minColumn,
+                                  sdColumn=sdColumn,maxColumn=maxColumn)))
+    ynorm <- eval(substitute(dnorm(x = range, mean = meanColumn, sd = sdColumn),
+                             list(i=i,sdColumn=sdColumn,meanColumn=meanColumn)))
+    graphs[[i]] <- eval(substitute(qplot(a$residuals[,i], geom = "blank") +   
+        geom_line(aes(y = ..density.., colour = "Data Density"), stat = 'density') +  
+        geom_line(aes(x = range, y = ynorm, color = "Normal")) +
+        geom_histogram(aes(y = ..density..), alpha = 0.4) +                        
+        scale_colour_manual(name = 'Density', values = c('red', 'blue')) + 
+        theme(legend.position = c(0.85, 0.85)) +
+        xlab("Time") +
+        ggtitle(names(a$residuals[i])),list(i=i,range=range,ynorm=ynorm)))
+}
+
+grid.arrange(graphs[[1]], graphs[[2]], ncol=2)
+grid.arrange(graphs[[3]],graphs[[4]], ncol=2)
+```
+
+
+
+
+

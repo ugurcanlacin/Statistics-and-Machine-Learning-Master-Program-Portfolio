@@ -1,0 +1,304 @@
+---
+title: 'Assignment 3: Principle component and factor analysis'
+author: "Milda Poceviciute, Henrik Karlsson, Ugurcan Lacin and Ramon Laborda"
+date: "12 December 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Principal components, including interpretation of them
+
+## a)
+
+```{r}
+# Data
+mydata <- read.table("T1-9.dat", sep="\t")
+X <- mydata[,-1]
+# Correlation matrix
+R <- cor(X)
+# Eigen decomposition
+ed <- eigen(R)
+```
+
+The sample correlation matrix is:
+
+```{r, echo=FALSE}
+R
+```
+The coresponding eigendecomposition is:
+
+```{r,echo=FALSE}
+cat("Eigen values are:")
+cat("\n")
+cat(ed$values)
+cat("\n")
+cat("\n")
+cat("Eigen vectors are:")
+for (i in 1:nrow(ed$vectors)){
+cat("\n")
+cat(paste("Eigenvector ",i))
+cat("\n")
+cat("\n")
+cat(ed$vectors[i,])
+cat("\n")
+}
+```
+
+## b)
+
+The principle components of R are given by:
+
+$Y_i = \vec{e_i}^{\,T} * \ \vec{X}$
+
+Hence, the first two PCAs are:
+
+$Y_1 = -0.3777657*Z_2 -0.4071756*Z_3 -0.1405803*Z_4 + 0.5870629*Z_5 -0.1670689*Z_6 + 0.5396973*Z_7 + 0.08893934* Z_8$
+
+$Y_2 = -0.4071756*Z_2 -0.4136291 * Z_3 -0.4593531* Z_4 + 0.1612459Z_5 + 0.3090877*Z_6 + 0.4231899*Z_7 + 0.3892153*Z_8$
+
+```{r}
+# Normalise data:
+Z <- scale(X)
+R1 <- cor(Z)
+# Eigen decomposition
+edZ <- eigen(R1)
+lambda1 <- which.max(edZ$values)
+lambda2 <- which.max(edZ$values[-1])+1
+total_lambda <- sum(edZ$values)
+# Find first two PCAs
+eiv1 <- edZ$vectors[,lambda1]
+eiv2 <- edZ$vectors[,lambda2]
+pca1 <- Z %*% eiv1
+pca2 <- Z %*% eiv2
+
+```
+
+The first and Second Principal Components are:
+
+```{r, echo=FALSE}
+data.frame(PCA1 = pca1, PCA2 = pca2)
+```
+
+The total variance explained by the first two PCA are:
+
+```{r}
+# Total Sample Variance explained:
+# By PCA1:
+var_expl1 <- edZ$values[1]/total_lambda
+# By PCA2:
+var_expl2 <- edZ$values[2]/total_lambda
+
+cat(paste("First PCA explains ", round(var_expl1*100,2), "% of total varaince"))
+cat("\n")
+cat(paste("Second PCA explains ", round(var_expl2*100,2), "% of total varaince"))
+```
+
+We can see that the PCA1 captures the majority of the variance in the data, and the sum of the first two PCAs is above 90%. This is sufficient to capture the most available information of the underlying data. 
+
+Now the correlation between all PCAs and the correlation between PCAs and the normalised data is calculated.
+```{r}
+pca_mat <- matrix()
+temp <- matrix()
+
+for (i in 1:nrow(edZ$vectors)){
+    temp <- Z %*% edZ$vectors[i,]
+    if (i == 1){
+      pca_mat <-   temp
+    }
+    else{
+    pca_mat <-  cbind(pca_mat,temp)
+    }
+}
+
+cor_pca1 <- matrix()
+cor_pca2 <- matrix()
+
+for (k in 1:ncol(Z)){
+    # Correlation between PCA1 and standardised variables
+    cor_pca1[k] <- eiv1[k]*sqrt(edZ$values[1])/sd(Z[,k])
+    # Correlation between PCA2 and standardised variables
+    cor_pca2[k] <- eiv2[k]*sqrt(edZ$values[2])/sd(Z[,k])
+}
+
+```
+
+The table below shows the correlation between the first two PCAs and the 7 variables of the standardised data:
+```{r}
+result <- data.frame(PCA1 = cor_pca1, PCA2 = cor_pca2)
+rownames(result) <- colnames(Z)
+result
+```
+
+
+## c)
+
+The PCA2 takes the difference between the short running distance and long distances, hence it could measure the relative strengh of each nations athletes. The PCA1 is more difficult to interpret, but it could measure the athletic excellence of the nations. 
+
+We can see that PCA1 has very high absolute correlation with all standardised variables and the PCA2 has much lower absolute correlation with the standardised variables. This is consistent with the fact that PCA1 captures the most underlying variance in the data, while PCA2 explains much less of the total variance in the data.
+
+## d)
+
+```{r}
+pca_countries <- data.frame(Country = mydata[order(pca1, decreasing = TRUE),1], PCA1 = pca1[order(pca1, decreasing = TRUE)])
+```
+
+The list of the countries ranked by PCA1:
+```{r, echo=FALSE}
+pca_countries
+```
+
+The top 5 countries are consistent with our view on which countries' athletes are the best performing at various running distances. Hence, we conlcude that assumption that PCA1 is showing the overall athletic excellence of the country is reasonable.
+
+
+\newpage
+# Question 2 - Factor analysis
+
+## 9.28
+Perform a factor analysis on the national track records for women. Use the sample covariance matrix S and interpret factors. Compute the factor scores, and check for outliers in the data. Repeat the analysis with the sample correlation matrix R. Does it make a difference if R, rather than S is factored? Explain
+
+```{r, warning = FALSE, message = FALSE}
+library(ggplot2)
+library(psych)
+df <- read.table("T1-9.dat", sep = "\t")
+names(df) <- c("country", "m100", "m200", "m400", "m800", "m1500", "m3000", "marathon")
+
+X <- df[,2:8]
+
+S <- cov(X)
+R <- cor(X)
+
+ed <- eigen(S)
+
+# Test cummulative sum of variance explained by each variable
+cum_var <- unlist(lapply(1:7, function(x){
+    sum(ed$values[x])/sum(ed$values)
+}))
+cum_var
+
+qplot(y = ed$values, x = 1:7, geom = "line") +
+    geom_point() +
+    labs(title = "Screeplot", y = "Eigenvalues", x = "Component")
+```
+
+The vector above shows how much of variance that is explained by each variable. The third variable adds less than 0.1% to the model, so the factor analysis will be performed with 2 factors.
+
+Also, by looking at the screeplot, there is an "elbow" at to components, that also suggests that our factor analysis should be perfomed with a 2 factor solution.
+
+Next off, we test if there is outliers in the data. We do so by calculating the Malanobis distance and perform a chi-square test.
+
+```{r}
+# Chech for outliers in data, malahanobis vs chisq
+X_avg <- colMeans(X)
+resX_avg <- t(t(X)-X_avg)
+
+# Compute Mahalanobis distance per row so there is a number per country
+dist_maha <- resX_avg %*% solve(cov(X)) %*% t(resX_avg)
+dist <- diag(dist_maha)
+
+
+# Chi square value with 
+c2 <- qchisq(.95, df=ncol(X)) 
+result_df <- data.frame(countries = df[,1], test_diff = dist-c2)
+outliers <- subset(result_df, result_df[,2]>0)
+outliers
+```
+
+5 countries are considered being outliers in the data set, they are listed above. 
+
+## Factor analysis with maximum likelihood
+```{r}
+# ML factor analysis ------------------------------------------------------
+
+fac_ml_S <- factanal(x = X, factors = 2, covmat = S, n.obs = 54, rotation = "varimax")
+fac_ml_S
+fs_ml_S <- factor.scores(X, fac_ml_S)
+gg_fs_ml_S <- data.frame(fac1 = fs_ml_S$scores[,1],
+                         fac2 = fs_ml_S$scores[,2],
+                         country = df$country)
+ggplot(gg_fs_ml_S, aes(x = fac1, y = fac2)) +
+    geom_point() +
+    geom_text(aes(label=ifelse(fac1 > 2 | fac2 > 2, as.character(country),"")), hjust=0,vjust=0) +
+    labs(title = "Factor Analysis ML with covariance", x = "Factor 1", y = "Factor 2")
+```
+
+The results for the maximum likelihood factor analysis based on the covariance matrix with two factors is presented above. When we analyse the loadings the first factor, it can be seen that it's is stronger with the longer running distances and sprinting distances have weaker loadings. The situation is the opposite in the second factor. The first factor can be interpreted as an endurance factor and the second factor as speed/strengh. The distance 800m have relativly strong loadings in both factors, but a bit higher in the first factor, so we consider it to belong to the first factor. It is intuitive that 800m meter is having high loadings in both factors, since 800m is being considered as one of the toughest running distances there is, which require both speed/strenght and endurance.
+
+The first factor explains 45.9% of the variance and the second explains 42.7%. In total does the factor analysis explain 88.6% of the variance.
+
+The graph shows the factor scores for each country. We are trying to see if there are country that are an outlier by visually look at the data. In the plot, 3 countries that seem to be outliers, KORN, COK and SAM.
+
+
+```{r}
+fac_ml_R <- factanal(x = X, factors = 2, covmat = R, n.obs = 54, rotation = "varimax")
+fac_ml_R
+# fs_ml_R <- factor.scores(X, fac_ml_R)
+# gg_fs_ml_R <- data.frame(fac1 = fs_ml_R$scores[,1],
+#                          fac2 = fs_ml_R$scores[,2],
+#                          country = df$country)
+# ggplot(gg_fs_ml_R, aes(x = fac1, y = fac2)) +
+#     geom_point() +
+#     geom_text(aes(label=ifelse(fac1 > 2 | fac2 > 2, as.character(country),"")), hjust=0,vjust=0) +
+#     labs(title = "Factor Analysis ML with correlation", x = "Factor 1", y = "Factor 2")
+```
+
+When the maximum likelihood factor analysis is computed by the correlation matrix instead of the covariance matrix, we can see that the results are identical.
+
+Our best guess why this happens, is because we believe that the maximum likelihood estimation somehow standardize the covariance matrix and/ or the correlation matrix before the factor analysis is calculated, so that the output of the two options becomes identical. The correlation matrix is a standardization of the covariance matrix, so both matrices contain the same type of information.
+
+
+## Factor analysis with Principal Components
+
+```{r}
+library(psych)
+fac_pc_S <- principal(r = S, nfactors = 2, rotate = "varimax", covar = TRUE)
+fac_pc_S
+fs_pc_S <- factor.scores(X, fac_pc_S)
+gg_fs_pc_S <- data.frame(fac1 = fs_pc_S$scores[,1],
+                         fac2 = fs_pc_S$scores[,2],
+                         country = df$country)
+ggplot(gg_fs_pc_S, aes(x = fac1, y = fac2)) +
+    geom_point() +
+    geom_text(aes(label=ifelse(fac1 > 2 | fac2 > 2, as.character(country),"")), hjust=0,vjust=0) +
+    labs(title = "Factor Analysis PC with covariance matrix", x = "Factor 1", y = "Factor 2")
+```
+
+
+When factor analysis with Principal Components with the covariance matrix is performed, we can see that the unstandardized loadings is very effected by the covariance matrix, were marathon with a high variance have much stronger loading than the other distances. In the unstandardized case, we can see that the first factor explains 87% of the variance and the result doesn't provide us with any useful information.
+
+However, if we analyse the standardized result, we can see that the pattern is similar as the factor analysis with maximum likelihood estimation and the same interpretation of the factors can be drawn. Here, the 1500m have relativly high loadings in both factors.
+
+The first factor explains 40% of the variance and the second explains 44%. 
+
+When looking at the plot, one can see that there still is 3 countries that is further away from the center, still KORN, COK and PNG. But in this case, all countries are more scattered and it's harder to distinguish what country that could be considered an outlier, compared to the maximum likelihood case.
+
+
+```{r}
+fac_pc_R <- principal(r = R, nfactors = 2, rotate = "varimax", covar = FALSE)
+fac_pc_R
+fs_pc_R <- factor.scores(X, fac_pc_R)
+gg_fs_pc_R <- data.frame(fac1 = fs_pc_R$scores[,1],
+                         fac2 = fs_pc_R$scores[,2],
+                         country = df$country)
+ggplot(gg_fs_pc_R, aes(x = fac1, y = fac2)) +
+    geom_point() +
+    geom_text(aes(label=ifelse(fac1 > 2 | fac2 > 2, as.character(country),"")), hjust=0,vjust=0) +
+    labs(title = "Factor Analysis PC with correlation matrix", x = "Factor 1", y = "Factor 2")
+```
+
+When performing the factor analysis with principal components based on the correlation matrix, the results are similar to both the maximum likelihood method and principal component with covariance matrix. We do not receive an unstandardized factor loading here, because the corrlation matrix is a standardization of the covariance matrix. 
+
+The results here still fit with our earlier description of the two factors, and I'd say, it's the easiest case to interpret the two factors. 
+
+The first factor explains 47% of the variance and the second explains 45%.
+
+When looking at the scatterplot, most countries seem less scattered compared to PC with covariance matrix, however, now 4 countries seem to be outliers, KORN, COK, PNG and SAM.
+
+
+## What does it mean that the rotation is set to "varimax" by default?
+Rotation is being used to easier differentiate between different factors. The rotation does not change the position of variables relative to eachother when the rotation is performed, which imples that correlation between factors are persevered. 
+Instead, the loadings change in a rotation. 
+
+Varimax rotation is a orthogonal rotation of the loading matrix. An orthogonal rotation changes the factor variance but factors remain uncorrelated and variable communalities is perserved. What the Varimax rotation does, is that it tries to maximize variance among the squared loadings of each factor.
