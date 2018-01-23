@@ -1,6 +1,6 @@
 # Multivariate Statistical Methods
 
-In this course, I, Milda Poceviciute, Henrik Karlsson and Ramon Laborda had 4 lab projects that we had to implement everything in R programming language. You can see below briefly what each project contains.
+In this course, I, [Milda Poceviciute](https://github.com/poceviciute) , [Henrik Karlsson](https://github.com/henkar91)  and [Ramon Laborda](https://github.com/ramonlaborda) had 4 lab projects that we had to implement everything in R programming language. You can see below briefly what each project contains.
 
 ## Labs
 
