@@ -4,16 +4,16 @@ In this course, I, [Milda Poceviciute](https://github.com/poceviciute) , [Henrik
 
 ## Labs
 
-[Lab 1](Multivariate_Assignment_1/)
+[Lab 1](Multivariate%20Assignment%201/)
 
 
-[Lab 2](Multivariate_Assignment_2/)
+[Lab 2](Multivariate%20Assignment%202/)
 
 
-[Lab 3](Multivariate_Assignment_3/)
+[Lab 3](Multivariate%20Assignment%203/)
 
 
-[Lab 4](Multivariate_Assignment_4/)
+[Lab 4](Multivariate%20Assignment%204/)
 
 
   
