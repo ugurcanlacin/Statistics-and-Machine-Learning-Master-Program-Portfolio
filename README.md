@@ -15,6 +15,7 @@ I am taking courses each period and doing lots of lab projects. I will clearly b
 #### Period 2
 
 - [Introduction to Machine Learning](/Semester%201/Introduction%20to%20Machine%20Learning)
+- [Multivariate Statistical Methods](/Semester%201/Multivariate%20Statistical%20Methods)
 
 ### Semester 2 (Spring)
 
