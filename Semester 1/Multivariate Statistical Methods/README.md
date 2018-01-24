@@ -4,7 +4,7 @@ In this course, I, [Milda Poceviciute](https://github.com/poceviciute) , [Henrik
 
 ## What I learned from this course?
 
-Since I have a software engineering bachelors degree, I had no idea how to interpret the data in statistical way. Perhaps I could lead to some inferences by using some software libraries. But I think I have gained a much better understanding by having its background mathematically. In order to be able to develop this successful machine learning model, it is necessary to first understand data itself. With this course I have gained a good experience on the way of understanding the multi variable data.
+Since I have a software engineering bachelors degree, I had no idea how to interpret the data in statistical way. Perhaps I could lead to some inferences by using some software libraries. But I think I have gained a much better understanding by having its background mathematically. In order to be able to develop successful machine learning models, it is necessary to first understand data itself. With this course I have gained a good experience on the way of understanding the multi variable data.
 
 During lab projects, I have reached the following goals by using R programming language.
 
