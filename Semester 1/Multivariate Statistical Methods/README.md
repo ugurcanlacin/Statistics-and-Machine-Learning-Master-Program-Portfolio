@@ -31,7 +31,7 @@ During lab projects, I have reached the following goals by using R programming l
 
 [Lab 3](Multivariate%20Assignment%203/)
 
-- Applied Principal Component Analysis to see how we can reduce the dimesion.
+- Applied Principal Component Analysis to see how we can reduce the dimension.
 - Factor analysis
 
 
