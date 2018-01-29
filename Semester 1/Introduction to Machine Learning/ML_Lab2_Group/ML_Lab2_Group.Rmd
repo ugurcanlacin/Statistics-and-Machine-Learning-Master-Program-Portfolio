@@ -1,0 +1,699 @@
+---
+title: "Introduction to Machine Learning - Lab 2"
+author: "Milda Poceviciute, Henrik Karlsson, Ugurcan Lacin"
+date: "28 November 2017"
+output: pdf_document
+---
+
+# Assignment 1. LDA and logistic regression
+## Part 1
+
+```{r, echo=FALSE}
+library(ggplot2)
+set.seed(12345)
+data <- read.csv("australian-crabs.csv")
+# Plot RW and CL, colour points by the Sex variable
+ggplot(data, aes(x=data$CL, y=data$RW))+
+    geom_point(aes(colour = as.factor(data[,2])))+
+    labs(colour="Sex", x= "CL", y= "RW")
+```
+
+&nbsp;
+
+The australian crab data is analysed, more preciselly, the relation between CL and Sex, and RW variables.From the scatter plot there seem to be two clusters based on the sex, and they both have linear tendency. Hence it should be easy to clasify the data using linear discriminant analysis.
+
+&nbsp;
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+library(ggplot2)
+qplot(x = CL, data = data, geom = "histogram")
+qplot(x = RW, data = data, geom = "histogram")
+```
+
+&nbsp;
+
+When plotting the data, the data seem to contain two linear patterns. Linear Discriminant Analysis assume that the decision boundries are linear and the classes are normally distributed. When reviewing the histogram for each variable they seem somewhat normal and therefore this LDA would be a suitable method in this case.
+
+&nbsp;
+
+## Part 2
+
+Finding $w_{0i}$ and $w_{i}$ is necessary to compute discrimant function. They are calculated in disc_func() by applying formulas on the below. After this, classification is possible with these calculated $w_{0i}$ and $w_{i}$.
+
+$$w_{0i}=-\frac{1}{2}\mu_{i}^T\sum^{-1}\mu_{i}+\log{\pi_i}$$
+
+&nbsp;
+
+For the implementation of LDA, firstly We create a discriminant functions disc_fun:
+
+&nbsp;
+
+```{r}
+disc_fun=function(label, S){
+X1=X[Y==label,]
+# LDA parameters w1 (vector with 2 values) and w0 (denoted here as b1)
+mean_x_1 <- apply(X1,2,function(a){mean(a)})
+mean_x_2 <- apply(X2,2,function(a){mean(a)})
+
+p <- (nrow(X1)/length(Y))
+b1 <- -0.5 %*% t(mean_x_1) %*% solve(S) %*% mean_x_1 + log(p)
+w1 <- solve(S) %*% mean_x_1
+
+return(c(w1[1], w1[2], b1[1,1]))
+}
+```
+
+&nbsp;
+
+Then, We split the data and calculate sample covariance:
+
+&nbsp;
+
+```{r}
+# Split data into X (explanatory variables) and Y(dependent variable)
+X <- data[,c(5,6)]
+Y <- data$sex
+X1=X[Y=="Male",]
+X2=X[Y=="Female",]
+
+# Sample covariance
+S=cov(X1)*dim(X1)[1]+cov(X2)*dim(X2)[1]
+S=S/dim(X)[1]
+```
+
+&nbsp;
+
+And finally, the discriminant function coefficients are calculated, and clasification is done on the data:
+
+&nbsp;
+
+```{r}
+
+#discriminant function coefficients
+res1=disc_fun("Male",S)
+res2=disc_fun("Female",S)
+# Decision boundary coefficients 'res' are given by:
+res <- res1 - res2
+# decission function 
+w0 <- (res1[3] - res2[3])/(res2[1] - res1[1]) # intercept
+w1 <- (res1[2] - res2[2])/(res2[1] - res1[1]) # slope
+# classification
+d=res[1]*X[,1]+res[2]*X[,2]+res[3]
+Yfit=(d>0)
+
+```
+
+&nbsp;
+
+From the decission function I get that the decission equation has:
+
+&nbsp;
+
+```{r, echo=FALSE}
+cat(paste("Intercept: ", w0)) 
+cat("\n")
+cat(paste("Slope ", w1))
+
+```
+
+&nbsp;
+
+Therefore, the final equation is given by $1.73598766150986 + 0.342698675880772*CL = RW$
+
+## Part 3
+Data is classified by using $w_{0i}$ and $w_{i}$ found. Now this classified data is plotted as x-axis CL and y-axis RW. Intercept and slope values are calculated by helping of $w_{0i}$ and $w_{i}$. Thus there is a decision boundary between the two classes. When the decision boundary is drawn, it can be observed that the two classes are uniformly separated from the center. Thus, the data was classified first, and then the decision line is used to visualize the classification.
+
+&nbsp;
+
+```{r}
+# The plot of the decision boundaries. 
+plot(X[,2],X[,1], col=Yfit+1, xlab="CL", ylab="RW")
+abline(a = w0, b = w1)
+```
+
+&nbsp;
+
+From the plot of the decission boundaries, it seems that the fit is reasonable. A few points are on the decission boundary and then the "Female" category is assigned to them. Of course, if it is compared to the real data, there are some points that are misclassified, but I would say the misclassification rate is small (conlcussion is done just by visually observing plots).
+
+The confusion matrix result appears below because it is difficult to graphically interpret the consistency of the classified data. According to the confusion matrix result, the data seems to be classified with a high consistency.
+
+&nbsp;
+
+```{r}
+table(Yfit,data$sex)
+```
+
+&nbsp;
+
+## Part 4
+Now another method, logistic regression, is used. The model is trained using the glm () function. Then we take the coefficients and calculate weights for both RW and CL. Thus, the decision boundary is calculated here as calculated in the same liner discrement analysis section. Both decision boundaries are drawn for a comparative graph. The line drawn with red is the line for logistic regression. The other is the decision boundary belonging to the method of discrement analysis. It is unlikely to make a clear statement from the graph. For this reason, we are looking at confusion matrix results to compare numerical accuracy.
+
+&nbsp;
+
+We fit the logistic regression model on the same data and use prediction boundary 0.5 in order to classify the data:
+
+&nbsp;
+
+```{r, warning=FALSE}
+# Select only the needed data
+df <- data[,c(2,5,6)]
+# fit the logistict regression (by using general linear regression function)
+model <- glm(sex ~.,family=binomial(),data=df)
+pred <- predict(model,X, type="response") > 0.5
+```
+
+&nbsp;
+
+The model provides me with these coefficients:
+
+&nbsp;
+
+```{r}
+model$coefficients
+```
+
+&nbsp;
+
+Hence, the decission boundary function now has a form
+$ 13.616628 -12.563893*RW + 4.630747*CL = 0.5$
+And from this I derive that the slope and intercept of the decission boundary function are:
+
+&nbsp;
+
+```{r, echo=FALSE}
+intercept = (0.5 - model$coefficients[1])/model$coefficients[2]
+slope = - model$coefficients[3]/model$coefficients[2]                                                            
+
+cat(paste("Intercept: ", intercept)) 
+cat("\n")
+cat(paste("Slope ", slope))
+
+```
+
+```{r, echo=FALSE}
+plot(X[,2],X[,1], col=pred+1, xlab="CL", ylab="RW")
+abline(a = intercept, b = slope,col = "red")
+abline(a = w0, b = w1)
+```
+
+&nbsp;
+
+The difference between the classification of the data in parts **3** and **4** (hence, the difference in the decission boundary functions) is very small. It looks like only a few points that are very close to the decission boundary have different classification, but in general it is difficult claim that one method is definatelly better than another.
+
+&nbsp;
+
+# Assignment 2. Analysis of credit scoring
+## Part 1
+Data is imported to R and divided into training/validation/test as 50/25/25 by using set.seed(12345).
+
+&nbsp;
+
+```{r}
+suppressWarnings(suppressMessages(library(readxl)))
+# Import the data and change the dependent variable to have values:
+# 0 if "bad" 
+# 1 if "good"
+mydata <- as.data.frame(read_xls("creditscoring.xls"))
+mydata$goodbad <- rep.int(0,nrow(mydata))
+mydata$goodbad[mydata$good_bad == "good"] = 1
+mydata$good_bad <- NULL
+
+# Devide data into traning (50%), testing (25%) and validation (25%)
+n=dim(mydata)[1]
+set.seed(12345)
+id=sample(1:n, floor(n*0.5))
+train=mydata[id,]
+test=mydata[-id,]
+
+n2 <- dim(test)[1]
+id2=sample(1:n2, floor(n2*0.5))
+validation=test[id2,]
+test=test[-id2,]
+```
+
+## Part 2
+```{r}
+library(tree)
+
+# Function that builds the confusion matrix
+confusion_matrix <- function(predicted, actual) {
+    df <- data.frame("Pred" = predicted, "Real" = actual)
+    confusion_mat <- with(df, table(Real, Pred))
+    totals <- matrix(c(sum(confusion_mat[1, ]), sum(confusion_mat[2, ])), nrow = 2, ncol = 1)
+    confusion_mat <- cbind(confusion_mat, totals)
+    colnames(confusion_mat) <- c("bad", "good", "Total")
+    rownames(confusion_mat) <- c("bad", "good")
+   # as.table(confusion_mat)
+    return(confusion_mat)
+}
+
+# Fit the tree by using deviance impurity measurement
+fit1=tree(as.factor(goodbad)~., data=train, split = c("deviance"))
+
+# Predict the values (clasify the data)
+Yfit1=predict(fit1, newdata=validation, type= "class")
+confusion_mat1 <- confusion_matrix(actual=validation$goodbad, predicted=Yfit1)
+misclass1 <- (confusion_mat1[1,2] + confusion_mat1[2,1])/(confusion_mat1[2,3] + confusion_mat1[1,3])
+
+# Fit the tree by using gini impurity measurement
+fit2=tree(as.factor(goodbad)~., data=train, split = c("gini"))
+Yfit2=predict(fit2, newdata=validation, type="class")
+
+confusion_mat2 <- confusion_matrix(actual=validation$goodbad, predicted=Yfit2)
+misclass2 <- (confusion_mat2[1,2] + confusion_mat2[2,1])/(confusion_mat2[2,3] + confusion_mat2[1,3])
+
+```
+&nbsp;
+
+Gini, which is a measure of impurity, is used to fit a tree. Then, predictions are produced with both train and test data. With these predictions, the misclassification rates for both train and test data are calculated separately. When these rates are examined, the following interpretation can be made. The misclassification rate of the train data is lower than that of the test data. That's why the model is trained with the train data set. Therefore, the train learns more about the template in the that dataset.
+
+&nbsp;
+
+**Results:**
+
+* The tree fitted by using deviance impurity measurement:
+- Misclassification rate on training data is 0.2105, taken from the summary of the model:
+```{r, echo=FALSE}
+summary(fit1)
+```
+
+-  Misclassification rate on validation data is 0.248:
+
+&nbsp;
+
+```{r, echo=FALSE}
+misclass1
+```
+
+&nbsp;
+
+* The tree fitted by using gini impurity measurement:
+- Misclassification rate on training data is 0.2368, taken from the summary of the model:
+
+&nbsp;
+
+```{r, echo=FALSE}
+summary(fit2)
+```
+
+&nbsp;
+
+-  Misclassification rate on validation data is 0.248:
+
+&nbsp;
+
+```{r, echo=FALSE}
+misclass2
+```
+
+&nbsp;
+
+In conclusion, the tree using deviance impurity measurement has lower misclassification rate compared to the  tree build with gini. Hence, the deviance tree is more efficient.
+
+## Part 3
+
+```{r}
+trainScore=rep(0,15)
+testScore=rep(0,15)
+for(i in 2:15) {
+    prunedTree=prune.tree(fit1,best=i)
+    pred=predict(prunedTree, newdata=validation,
+                 type="tree")
+    trainScore[i]=deviance(prunedTree)
+    testScore[i]=deviance(pred)
+}
+plotdata <- as.data.frame(cbind(trainScore[2:15],testScore[2:15]))
+plottrees <- ggplot(plotdata, aes(2:15))+
+        geom_point(aes(y = plotdata$V1, colour = "trainScore"))+
+        geom_point(aes(y = plotdata$V2, colour = "testScore"))+
+        geom_line(aes(y = plotdata$V1, colour = "trainScore"))+
+        geom_line(aes(y = plotdata$V2, colour = "testScore"))+
+        labs(aes(x="Leaves", y ="Deviance"))
+optimal_tree <- order(testScore[2:15])[1] + 1  
+
+```
+
+<<<<<<< HEAD
+After running the pruning of tree for different number of leaves numbers, We conclude that the optimal tree has 4 leaves and 3 splits (the depth is 4). From the deviance versus nuber of leaves plot below, the tree fitted on validation model has the lowest deviance with 4 leaves (this is the reason why it was chosen). The tree fitted on training data has the deviance always decreasing as the number of leaves included is increased. This is intuitive, because the model is built using this dataset. However, the same trees fitted on validation data has a sharp increase in the deviance from having 12 leaves and more. This could mean that the models are starting to over-fit the data.
+=======
+&nbsp;
+
+After running the pruning of tree for different number of leaves numbers, We conclude that the optimal tree has 4 leaves and 3 splits. From the deviance versus nuber of leaves plot below, the tree fitted on validation model has the lowest deviance with 4 leaves (this is the reason why it was chosen). The tree fitted on training data has the deviance always decreasing as the number of leaves included is increased. This is intuitive, because the model is built using this dataset. However, the same trees fitted on validation data has a sharp increase in the deviance from having 12 leaves and more. This could mean that the models are starting to over-fit the data.
+>>>>>>> fbd43a0626a932e1e8f59fed00f9b9edfe2d4c7d
+
+&nbsp;
+
+```{r, echo=FALSE}
+plottrees
+```
+
+&nbsp;
+
+ Now, the same model is fitted on the testing data:
+ 
+&nbsp;
+
+```{r}
+# Do everything on test data
+fit1=tree(as.factor(goodbad)~., data=train, split = c("deviance"))
+final_tree <- prune.tree(fit1,best = optimal_tree)
+final_pred <- predict(final_tree, newdata=test, type="class")
+
+confusion_mat_final <- confusion_matrix(actual=test$goodbad, predicted=final_pred)
+misclass_final <- (confusion_mat_final[1,2] + confusion_mat_final[2,1])/(confusion_mat_final[2,3] + confusion_mat_final[1,3])
+plot(final_tree)
+text(final_tree,pretty = 0)
+```
+
+&nbsp;
+
+The optimal tree with 4 leaves and 3 splits, it includes variables: savings, duration and history. The misclassification rate is 0.26, while the confusion matrix is provided below:
+
+&nbsp;
+
+```{r,echo=FALSE}
+confusion_mat_final
+```
+
+## Part 4
+In this step a model is being trained using Naive Bayes. Then the model is tested with both train and test data. Confusion matrix results and misclassification rates can be seen above.
+
+&nbsp;
+
+```{r}
+library(MASS)
+library(e1071)
+
+fit_naive=naiveBayes(as.factor(goodbad)~., data=train)
+# Train data
+Yfit=predict(fit_naive, newdata=train)
+confusion_mat_train <- confusion_matrix(actual=train$goodbad, predicted=Yfit) 
+misclass_naive_train <- (confusion_mat_train[1,2] + confusion_mat_train[2,1])/(confusion_mat_train[1,1] + confusion_mat_train[1,2] + confusion_mat_train[2,1]+confusion_mat_train[2,2])
+
+# Test data analysis
+Yfit=predict(fit_naive, newdata=test)
+confusion_mat_test <- confusion_matrix(actual=test$goodbad, predicted=Yfit)
+misclass_naive_test <- (confusion_mat_test[1,2] + confusion_mat_test[2,1])/(confusion_mat_test[1,1] + confusion_mat_test[1,2] + confusion_mat_test[2,1]+confusion_mat_test[2,2])
+
+```
+**Results:**
+
+* Fitting training data:
+- confusion matrix:
+```{r, echo=FALSE}
+confusion_mat_train
+```
+
+- Misclassification rate:
+```{r, echo=FALSE}
+misclass_naive_train
+```
+* Fitting testing data:
+
+- confusion matrix:
+```{r, echo=FALSE}
+confusion_mat_test
+```
+
+- Misclassification rate:
+```{r, echo=FALSE}
+misclass_naive_test
+```
+
+&nbsp;
+
+The optimal tree from part 3 has misclassification rate 0.26 which is lower than misclassification rates from part 4 (0.3 for training data and 0.32 for testing data). It is reasonable that training data has lower misclassification rate compraed to the testing data in part 4. This is because the model was built using the training data, and hence it describes it better.
+
+## Part 5
+
+```{r, echo=FALSE}
+library(MASS)
+library(e1071)
+set.seed(12345)
+```
+
+&nbsp;
+
+In this part I will fit Bayes Naive algorithm with changed Loss function such that wrongly classified "bad" datapoint as "good" will be penalised 10 times more than badly classified "good" as "bad":
+
+&nbsp;
+
+```{r}
+L <- matrix(c(0,10,1,0), nrow =2, ncol=2)
+L
+```
+
+```{r}
+# Fit Bayes Naive algorithm
+fit_naive2=naiveBayes(as.factor(goodbad)~., data=train)
+# Make raw predictions
+Yfit2=predict(fit_naive2, newdata=test, type= "raw")
+# Classify data manually 
+Ypredict_final <- Yfit2[,1]/Yfit2[,2] <= 10
+
+# Prepare confusion matrix and misclassification rate
+confusion_mat4 <-  confusion_matrix(actual=test$goodbad, predicted=Ypredict_final) 
+
+misclass_naive2 <- (confusion_mat4[1,2] + confusion_mat4[2,1])/(confusion_mat4[1,1] + confusion_mat4[1,2] + confusion_mat4[2,1]+confusion_mat4[2,2])
+```
+
+&nbsp;
+
+**Results:*
+* confusion matrix:
+```{r, echo=FALSE}
+confusion_mat4
+```
+* Misclassification rate:
+```{r, echo=FALSE}
+misclass_naive2
+```
+
+&nbsp;
+
+In this part I get that misclassification rate and confusion matrix are abit better than in previous part. This is due to the fact that now only datapoints that are 10 times more likely to be "bad" than "good" are actually classified as being "bad". This means that the misclassification of "bad" points are decreased (in this part only $7/172 * 100 = 4.069767$% of datapoints classified as "good" were in fact "bad" compared to $98/353 * 100 = 27.76204$% (train) and $49/250 * 100 = 19.6$% (test data) in part 4). However, the trade off is that some more "good" datapoints are misclassified as "bad": $65/172 * 100 = 37.7907$% in part 5 compared to $52/353 * 100 = 14.73088$% (training data) and $31/172 * 100 = 18.02326$% (testing data) in part 4.
+
+
+# Assignment 3. Uncertainty estimation
+## Part 1
+
+```{r}
+df <- read.csv("State.csv", sep = ";", dec = ",")
+# Change type to numeric
+df[,3] <- as.numeric(df[,3])
+df[,1] <- as.numeric(df[,1])
+# Reorder by MET
+df <- df[order(df$MET),]
+# Plot the data
+ ggplot(df)+
+        geom_point(aes(x=df$MET, y = df$EX))+
+        labs(aes(x="MET", y="EX"))+
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+&nbsp;
+
+The data seem to have two clusters, hence a none-linear relation. Therefore, linear models would not work well, and clasifying models should be chosen instead.
+
+## Part 2
+
+Here I fit a tree with 8 leaves tree and I get a resulting tree:
+
+&nbsp;
+
+```{r}
+set.seed(12345)
+library(tree)
+tree_data <- data.frame(EX = df$EX, MET = df$MET)
+tree_data <- tree_data[order(tree_data$MET),]
+tree1 = tree(EX~MET, data=tree_data,control = tree.control(nobs = 48,minsize = 8))
+plot(tree1)
+text(tree1, pretty=0)
+```
+
+```{r}
+set.seed(12345)
+cv_tree1 <- cv.tree(tree1)
+plot(cv_tree1$size,cv_tree1$dev)
+```
+
+&nbsp;
+
+After running corss validation on choosing the tree complexity I conclude that the minimum deviance has a tree with 3 splits. Hence, I use this tree for further analysis.
+First of all, I need to prune my tree and have a final tree with 3 splits:
+
+&nbsp;
+
+```{r}
+minsize = 8 - which.min(cv_tree1$dev)
+tree3 = prune.tree(tree1, best = minsize)
+
+plot(tree3)
+text(tree3, pretty=0)
+
+```
+
+&nbsp;
+
+Then I can do the predictions based on this tree:
+
+&nbsp;
+
+```{r}
+# Predictions
+pred3 <- predict(tree3, data= tree_data)
+residuals3 <- tree_data$EX - pred3
+
+plotdata3 <- data.frame(PRED = pred3, EX = tree_data$EX, MET = tree_data$MET)
+plotdata3 <- plotdata3[order(plotdata3$MET),]
+# Predicted and actual values (tree with 3 nodes)
+ggplot(plotdata3, aes(x=MET))+
+    geom_line(aes(y=PRED), colour = 2)+
+    geom_point(aes(y=EX), colour = 3)
+
+```
+
+&nbsp;
+
+
+Above plot shows the predicted values (indicated by the red line) and the actual data. It is clear that the tree simplifies data a lot and provides three seperate predictions. However, the residuals histogram plotted below seems to be centered around 0. That indicates the mean of residuals of this tree is around 0.
+
+&nbsp;
+
+```{r, echo=FALSE}
+hist(residuals3)
+```
+
+&nbsp;
+
+## Part 3
+
+In this part I do a non-parametric bootstarp analysis on my optimal tree from part 2. We assume that we do not know the true distribution nor the corresponding parameters. However, here I assume that the sample data represents the true population sample well enough. So I use it to estimate the true population distribution and the corresponding parameters.
+
+&nbsp;
+
+```{r, warning=FALSE}
+library(boot)
+set.seed(12345)
+
+# computing bootstrap samples
+f=function(data, ind){
+    data1=data[ind,]# extract bootstrap sample
+    res_tree=tree(EX~MET, data=data1, control = tree.control(nobs = 48,minsize = 8)) # compute the tree
+    res= prune.tree(res_tree, best = 3)
+    #predict values for data
+    predv=predict(res,newdata=tree_data)
+    return(predv)
+}
+
+nonparboot=boot(tree_data, f, R=1000) #make bootstrap 
+```
+
+&nbsp;
+
+Then I use the data to compute the confidence bands:
+
+&nbsp;
+
+```{r}
+# 95% CI non-parametric boostrap
+e=envelope(nonparboot) #compute confidence bands
+
+plot(tree_data$MET, tree_data$EX, pch=21, bg="orange",ylim=c(130, 460))
+points(tree_data$MET,pred3,type="l") #plot fitted line
+#plot cofidence bands
+points(tree_data$MET,e$point[2,], type="l", col="blue")
+points(tree_data$MET,e$point[1,], type="l", col="blue")
+```
+
+&nbsp;
+
+The upper and lower band provides a 95% confidence interval for each EX obsevation given my estimated distribution and its' parameters from bootstrap resampling. As the extreme values EX observations (outliers) seem to be present among high-valued EX observations, the upper bound seems to be quite rocky while the bottom bound is a bit smoother. Furthermore, due to this concentraton of extreme observations in upper part of the plot, the confidence bands seem to be shifted up. Hence, the confidence band does not include quite a lot of observations with the lower EX values. The confidence bands are quite narrow, but they seem to include less than 95% of the observations. One of the reasons could be that the data set that I use for non-parametric bootstrap resampling is very small - only 48 observations. This means that there is a high chance that this data does not represent well the true population sample and so the accurancy of the non-parametric bootsrap is bad. Therefore, it's difficult to be sure if the model in part 2 is reasonable or no based on the confidence bands.
+
+## Part 4
+
+In this part I analyse the parametric bootstrap sampling. The difference from the non-parametric sample is that here we assume that we know the distribution of the true population sample, but we do not know the parameters.
+
+&nbsp;
+
+```{r, warning=FALSE}
+set.seed(12345)
+
+mle_tree=tree(EX~MET, data=tree_data, control = tree.control(nobs = 48,minsize = 8))
+mle = prune.tree(mle_tree, best = 3)
+pred_mle = predict(mle, newdata=tree_data)
+residuals_mle <- tree_data$EX - pred_mle
+ 
+rng=function(data, mle) {
+    
+    data1=data.frame(MET=data$MET, EX=data$EX)
+    n=length(data$MET)
+    #generate new Price
+    data1$EX=rnorm(n,predict(mle, newdata=data1),sd(residuals_mle))
+    return(data1)
+}
+
+f=function(data){
+    res_tree=tree(EX~MET, data=data, control = tree.control(nobs = length(data$MET),minsize = 8)) 
+    # compute the tree
+    res= prune.tree(res_tree, best = 3)
+    #predict values for data
+    predv=predict(res,newdata=tree_data)
+    return(predv)
+}
+
+paramboot1=boot(tree_data, statistic=f, R=1000,
+         mle=mle,ran.gen=rng, sim="parametric")
+
+e_confidence <- envelope(paramboot1)
+
+f1=function(data){
+    #res=tree(EX~MET, data=tree_data, control = tree.control(nobs = 48,minsize = 8)) #fit linear
+    res_tree=tree(EX~MET, data=data, control = tree.control(nobs = length(data$MET),minsize = 8)) 
+    # compute the tree
+    res= prune.tree(res_tree, best = 3)
+    #predict values for all Area values from the riginal data
+    pred=predict(res,newdata=tree_data)
+    n=length(tree_data$MET)
+    predicted=rnorm(n,pred, sd(residuals_mle))
+    return(predicted)
+}
+
+paramboot2=boot(tree_data, statistic=f1, R=1000,
+         mle=mle,ran.gen=rng, sim="parametric")
+
+e_prediction <- envelope(paramboot2)
+```
+
+```{r, warning=FALSE}
+# 95% CI parametric boostrap
+
+plot(tree_data$MET, tree_data$EX, pch=21, bg="orange", ylim=c(130, 460))
+points(tree_data$MET,e_confidence$point[2,], type="l", col="blue")
+points(tree_data$MET,e_confidence$point[1,], type="l", col="blue")
+points(tree_data$MET,e_prediction$point[2,], type="l", col="red")
+points(tree_data$MET,e_prediction$point[1,], type="l", col="red")
+points(tree_data$MET,pred3,type="l") 
+
+
+
+```
+
+&nbsp;
+
+The 95% prediction band (given by the red line) is wider than the 95% confidence band (given by the blue line). Confidence band is based on our existing data while predicition band is based on newly generated model. The 95% confidence band of parametric bootsrap resampling is wider and more smooth compared to the non-parametric bootstrap. Also, in this case, the confidence band does not inlcude 95% of the points. Only 1 point is outsideof the prediction bands, which means that the band includes roughly 98% of the observations. Both bands seem to follow the patern of the observations quite well. I assume that the assumed distribution form of the data in part 2 is reasonable. 
+
+## Part 5
+
+```{r, echo=FALSE}
+hist(residuals3)
+```
+```{r, echo=FALSE}
+cat(paste("Sample mean of the residual: ",mean(residuals3)))
+```
+
+&nbsp;
+
+Observing the histogram of the residuals from the part 2 (above), I conlcude that the parametric bootsrap sampling is more suitable for this data. The sample mean of the residuals is 0.00000000000001184223 which is very close to 0. That means that they include mostly noise, and they do cancel each others effect out. So this model can be reasonably used as the assumed distirbution of the data in the parametric bootsrap. Parametric bootstrap works well even with a small samples, hence it is a preferred method in our case.
+
+

@@ -1,0 +1,463 @@
+---
+title: "Introduction to Machine Learning - Lab 1"
+author: "Ugurcan Lacin"
+date: "11/3/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 1
+
+In order to classify emails whether they are spam or not, K-NN Algorithm is used in this report. For that purpose, data set is imported into R and divided it into training and test sets (50% 50%). Thus, training set can be used to train K-NN implementation, then test set will be applied to test the consistency of the model.
+
+&nbsp;
+
+## Part 1
+```{r, eval = TRUE,message=FALSE}
+# Read data
+library(gdata)
+data <- read.xls("/home/ugur/git/ML_Lab1/spambase.xlsx")
+
+n=dim(data)[1]
+set.seed(12345)
+id=sample(1:n, floor(n*0.5))
+train=data[id,]
+test=data[-id,]
+```
+
+&nbsp;
+
+K-NN the algorithm simply looks at the distance to the neighbors around the specified k point. Cosine similarity is used to as distance measure here, which for two vectors X and Y defined as:
+
+\[c(X,Y) = \frac{X^TY}{\sqrt{\sum_i X^2_i}\sqrt{\sum_i Y^2_i}}\]
+
+After that, this measurement is used to calculate distance by subtracting it from 1.
+
+\[d(X,Y) = 1 - c(X,Y)\]
+
+After finding the distances, the list is sorted and get first k th elements, and calculate probability by using them. As a result of this function, the probability returns that email is junk or not.
+
+\newpage
+## Part 2
+```{r, eval = TRUE}
+knearest=function(data,k,newdata) {
+  n1=dim(data)[1]
+  n2=dim(newdata)[1]
+  p=dim(data)[2]
+  Prob=numeric(n2)
+  X=as.matrix(data[,-p])
+  Xn=as.matrix(newdata[-p])
+
+  X_hat=X/matrix(sqrt(rowSums(X^2)), nrow=n1, ncol=p-1)
+  Y_hat=Xn/matrix(sqrt(rowSums(Xn^2)), nrow=n1, ncol=p-1)
+
+  C = X_hat %*% t(Y_hat)
+
+  D = 1 - C
+
+  for (i in 1:n2 ){
+    neighbor <- order(D[,i])[1:k]
+    spam <- as.vector(data$Spam[neighbor])
+    Prob[i] <- sum(spam)/k
+  }
+  return(Prob)
+}
+
+```
+
+&nbsp;
+## Part 3
+confusionMatrix is a function that calculates confusion matrix and missclassification rate for given parameters, such as, test data, probabilities and decision rate. The function decides email is spam or now by comparing decision rate which is 0.5 as default. If it is greater than 0.5, it is spam. Then, it produces confusion matrix for us to see results as a table. And it calculates missclassification rate which means \[missclassification = 1 - correct\]
+
+&nbsp;
+
+```{r, eval = TRUE}
+confusionMatrix <- function(test = test,Prob,rate = 0.5){
+  svar <- data.frame(Pred = 0, Prob)
+  svar$Pred[Prob > rate] <- 1
+  conf_matr <- table(test$Spam, svar$Pred)
+  print("Confusion Matrix:")
+  print(conf_matr)
+  print(paste("Misclassification rate is ",(conf_matr[2,1] + conf_matr[1,2])/(n/2)))
+}
+```
+
+\newpage
+
+Knearest function will be used to classify training data with K = 5, which is default value for the function.
+
+&nbsp;
+
+```{r, eval = TRUE}
+resultKnearest5 <- knearest(train,5,test)
+confusionMatrix(test,resultKnearest5)
+```
+
+&nbsp;
+## Part 4
+Now, K = 1 is used to evaluate from another approach.
+
+&nbsp;
+
+```{r, eval = TRUE}
+resultKnearest1 <- knearest(train,1,test)
+confusionMatrix(test,resultKnearest1)
+```
+
+&nbsp;
+
+As seen, when K value is decreased it increases missclassification rate which means wrong predictions are increased. The following conclusion can be drawn from this that being careful when choosing k. For example, choosing a value of 1 would only take into account the nearest neighbor. However, when the value of 5 is chosen, there is more consistent result because the nearest 5 neighbors are considered. Because it means a better interpretation of neighbors. But increasing this value too much may not give a good result as well.
+
+&nbsp;
+
+## Part 5
+Now, kknn() function is used which is under kknn package, and same steps are done like K=5 and K=1, then results will be compared with previous ones.
+First kknn package is imported to R.
+
+&nbsp;
+
+```{r, eval = TRUE}
+library(kknn)
+```
+
+&nbsp;
+
+Then, kknn function is run with same parameters.
+
+&nbsp;
+
+```{r, eval = TRUE}
+kknnPackageResult5 <- kknn(Spam~., train, test, distance = 5)
+confusionMatrix(test,fitted(kknnPackageResult5))
+```
+
+&nbsp;
+
+Based on the results received, the evaluation which was made earlier are confirmed here. Because when the distance value is given as 5, a better result is obtained.
+
+## Part 6
+Now, There will be comparison for knearest() and kknn() functions with K=5 and will classify the test data by using following principle:$$\hat{Y} = 1~~if~~p(Y = 1|X) > \pi,~~otherwise~~\hat{Y} = 0,~~where~~\pi = 0.05,0.1,0.15,...,0.95.$$
+
+&nbsp;
+
+```{r, eval = TRUE}
+ROC=function(Y, Yfit, p){
+  m=length(p)
+  TPR=numeric(m)
+  FPR=numeric(m)
+  for(i in 1:m){
+    t=table(Yfit>p[i], Y)
+    TPR[i]=t[2,2]/(t[1,2]+t[2,2])
+    FPR[i]=t[2,1]/(t[2,1]+t[1,1])
+  }
+  return (list(TPR=TPR,FPR=FPR))
+}
+
+rates <- seq(0.05, 0.95, by=0.05)
+rocResultKnearest5 <- ROC(test$Spam,resultKnearest5,rates)
+
+plot(x=rocResultKnearest5$FPR,y=rocResultKnearest5$TPR,type="l")
+
+SpecificityKnearest <- 1 - rocResultKnearest5$FPR
+SensitivityKnearest <- rocResultKnearest5$TPR
+
+```
+
+```{r, eval = TRUE,echo=FALSE}
+print("Specificity")
+print(SpecificityKnearest)
+print("Sensitivity")
+print(SensitivityKnearest)
+```
+
+&nbsp;
+
+First knearest() function is considered, and looked at kknn package result
+
+&nbsp;
+
+```{r, eval = TRUE}
+rocResultKknn <- ROC(test$Spam,fitted(kknnPackageResult5),rates)
+plot(x=rocResultKknn$FPR,y=rocResultKknn$TPR,type="l")
+SpecificityKknn <- 1 - rocResultKknn$FPR
+SensitivityKknn <- rocResultKknn$TPR
+```
+
+```{r, eval = TRUE,echo=FALSE}
+print("Specificity")
+print(SpecificityKknn)
+print("Sensitivity")
+print(SensitivityKknn)
+```
+
+&nbsp;
+
+```{r, eval = TRUE}
+dataFrameKnearest <- data.frame(FPR = rocResultKnearest5$FPR,TPR = rocResultKnearest5$TPR)
+dataFrameKknn <- data.frame(FPR = rocResultKknn$FPR,TPR = rocResultKknn$TPR)
+
+library(ggplot2)
+ggplot() +
+  geom_point(data = dataFrameKnearest, aes(x = FPR, y = TPR), color = "red") +
+  geom_line(data = dataFrameKnearest, aes(x = FPR, y = TPR), color = "red") +
+  geom_point(data = dataFrameKknn, aes(x = FPR, y = TPR)) +
+  geom_line(data = dataFrameKknn, aes(x = FPR, y = TPR)) +
+  geom_abline(slope = -1, intercept = 1) +
+  xlab("FPR") +
+  ylab("TPR") +
+  ggtitle("ROC-curve")
+```
+
+&nbsp;
+
+The following conclusion can be drawn from this, knearest() is better than kknn package. The reason can be explained for this by analyzing the graph. It can be seen that the knearest function, indicated by the red line, has more space than the package of the kknn under the curve. For ROC-curve analysis, high space under the curve means better model.
+
+&nbsp;
+
+# Assignment 3
+
+mylin functions basically calculates linear model for given X and Y matrices and find beta values. After that, it multiply beta and test X matrix and return it.
+
+&nbsp;
+
+## Part 1 and 2
+```{r, eval = TRUE,warning = FALSE}
+
+#linear regression
+mylin = function(X, Y, Xpred) {
+  Xpred1 = cbind(1, Xpred)
+  X <- cbind(1, X)
+  beta <- solve(t(X) %*% X) %*% t(X) %*% Y
+  Res = Xpred1 %*% beta
+  return(Res)
+}
+
+myCV = function(X, Y, Nfolds) {
+  n = length(Y)
+  p = ncol(X)
+  set.seed(12345)
+  ind = sample(n, n)
+  X1 = X[ind, ]
+  Y1 = Y[ind]
+  sF = floor(n / Nfolds)
+  MSE = numeric(2 ^ p - 1)
+  Nfeat = numeric(2 ^ p - 1)
+  Features = list()
+  curr = 0
+
+  #we assume 5 features.
+
+  for (f1 in 0:1)
+    for (f2 in 0:1)
+      for (f3 in 0:1)
+        for (f4 in 0:1)
+          for (f5 in 0:1) {
+            model = c(f1, f2, f3, f4, f5)
+            if (sum(model) == 0)
+              next()
+            SSE = 0
+
+            for (k in 1:Nfolds) {
+              startIndice <- (k * sF) - sF + 1
+              endIndice <- 0
+              if (k == Nfolds) {
+                mod <- nrow(X1) %% Nfolds
+                endIndice <- (k * sF) + mod
+              } else{
+                endIndice <- k * sF
+              }
+
+              selectedFeatures <- which(model == 1)
+              Xvalidate <- as.matrix(X1[,selectedFeatures])
+              Xvalidate <- as.matrix(Xvalidate[startIndice:endIndice,])
+              Yvalidate <- as.matrix(Y1[startIndice:endIndice])
+
+              Xtrain <- X1[-c(startIndice:endIndice), selectedFeatures]
+              Ytrain <- Y1[-c(startIndice:endIndice)]
+              Ypred <- mylin(X = Xtrain, Y = Ytrain, Xpred = Xvalidate)
+
+              SSE = SSE + sum((Ypred - Yvalidate) ^ 2)
+            }
+            curr = curr + 1
+            MSE[curr] = SSE / n
+            Nfeat[curr] = sum(model)
+            Features[[curr]] = model
+
+          }
+  numberOfFeatures <-lapply(Features,FUN = function(x) {return(length(which(x == 1)))})
+  plot(x = numberOfFeatures, y = MSE)
+  i = which.min(MSE)
+  Features=Features[[i]]
+  Features2 <- which(Features == 1)
+  return(list(CV=MSE[i], 
+              Features=colnames(X1)[Features2],
+              Features = Features))
+}
+
+res <- myCV(as.matrix(swiss[, 2:6]), swiss[[1]], 5)
+print(res)
+```
+
+&nbsp;
+
+In conclusion, A graph can be seen as X = numberOfFeatures and Y = MSE. According to graph, Following explanation can be said, the MSE tends to decrease as the number of features increases. But that does not mean that the highest number of features gives the lowest MSE rate. The results can be considered to see which features bring the best model. According to this result, It is not possible to say the Examination feature influences the success of the model well.
+
+# Assignment 4
+
+## Part 1
+```{r, eval = TRUE,message=FALSE}
+library(gdata)
+data <- read.xls("/home/ugur/git/ML_Lab1/tecator.xlsx")
+
+library(ggplot2)
+ggplot(data,aes(x=Protein,y=Moisture)) + geom_point()
+```
+
+According to graph, linear model can be applied to describe this data even though there are some outliers.
+
+## Part 2
+```{r, eval = TRUE,message=FALSE}
+model <- function(i, data){
+    m <- lm(Moisture ~ poly(Protein, i, raw = TRUE), data)
+    return(m)
+}
+summary(model(6, data))
+```
+
+MSE is a suitable way of comparing the models in this case because all models have the same loss function. MSE is computed from average SSE of each model. So, it captures variance and bias. By helping of MSE, variance can be followed and interpretation can be made for the model's favor.
+
+## Part 3
+Data is divided into training and test sets as 50% 50%
+
+```{r, eval = TRUE,message=FALSE}
+n=dim(data)[1]
+set.seed(12345)
+id=sample(1:n, floor(n*0.5))
+train=data[id,]
+test=data[-id,]
+```
+
+This function takes train and test sets. It calculates MSE for both data sets by using model function from 1 to 6 as i value. After calculation, it returns results.
+
+```{r, eval = TRUE,message=FALSE}
+analyzeMSE <- function(train, test){
+  output <- vector()
+  for(i in 1:6){
+    m <- model(i, train)
+    pred <- predict(m, test)
+    MSE_train <- mean(residuals(m)^2)
+    MSE_test <- mean((pred - test$Moisture)^2)
+    
+    output <- rbind(output,c(MSE_train, MSE_test))
+  }
+  output <- cbind(output, c(1:6))
+  colnames(output) <- c("MSE_train", "MSE_test", "model")
+  return(output)
+}
+```
+
+To analyze train and test data, analyzeMSE is applied for that purpose. After getting MSE results, They are plotted to see clearly.
+
+```{r, eval = TRUE}
+MSE <- analyzeMSE(train, test)
+dfMSE <- data.frame(MSE)
+
+library(ggplot2)
+ggplot(data = dfMSE) + 
+  geom_point(mapping = aes(x = dfMSE$model, y = dfMSE$MSE_train,colour ='blue')) +
+  geom_point(mapping = aes(x = dfMSE$model, y = dfMSE$MSE_test, colour ='red')) +
+  ylab("MSE") +
+  xlab("Model")
+```
+
+According to graph, high bias and low variance are observed in the first model. However, as the iteration increases, the states of these two terms change inversely. In the last iteration, low bias and high variance are observed. This means that the model is actually exposed to overfitting. In that case, first model looks better model among others.
+
+## Part 4
+```{r, eval = TRUE,results='hide'}
+library(MASS)
+df <- data
+df4 <- df[, 2:102]
+linearModel <- lm(Fat ~., df4)
+aic <- stepAIC(linearModel, direction = "both")
+```
+
+stepAIC method is applied to perform variable selection. Thus, more important features that will affect the result come to forward.
+
+```{r, eval = TRUE}
+length(aic$coefficients)
+```
+
+64 features were selected according to the result
+
+## Part 5
+
+There are still more features to be considered. Unfortunately, in most cases, having more features does not mean that the accuracy of the model will be higher. In addition, overfitting is a significant problem and regularization techniques decreases overfitting possibility.
+
+Regularization is a model that its loss function contains another part to minimize variables' affects over dependent variable.
+
+The ridge regression has following part to minimize the loss function:
+\[\lambda*\sum w^2_j\]
+
+
+```{r, eval = TRUE,message=FALSE}
+library(glmnet)
+ridge <- glmnet(x = as.matrix(scale(df4[,1:100])), y = as.matrix(scale(df4[, 101])), alpha = 0, family = "gaussian")
+plot(ridge, xvar = "lambda", label = TRUE)
+```
+
+According to graph, it is observed that as the lambda value increases, the weights of the properties approach to zero. This can be explained as follows:
+Features still affect the result, however, their impact on result is less comparing to before. This is a kind of feature selection result.
+
+## Part 6
+
+There are another solution for regularization techniques which is called Lasso. In that method, the following part are used to minimize loss function. Unless ridge regression, Lasso method sets certain features as zero. Thus, if features are not good enough to affect result, they are excluded from the equation by helping of Lasso.
+\[\lambda*\sum^p_{j=1}|w_j|\]
+
+```{r, eval = TRUE}
+lasso <- glmnet(x = as.matrix(scale(df4[,1:100])), y = as.matrix(scale(df4[, 101])), alpha = 1, family = "gaussian")
+plot(lasso, xvar = "lambda", label = TRUE)
+```
+
+According the graph, it can be observed that as the lambda value increases, unlike the ridge method, some of the weights are set as zero.
+
+## Part 7
+
+```{r, eval = TRUE}
+lamSeq <- seq(0,100,by = 0.05)
+CVlasso <- cv.glmnet(x = as.matrix(scale(df4[,1:100])), y = as.matrix(scale(df4[, 101])), alpha = 1, family = "gaussian",lambda = lamSeq)
+CVlasso$lambda.min
+```
+
+A lambda sequence is created from 0 to 100 by increasing 0.05. This sequence is used in cross validation for Lasso method. As a result of this step, best lambda value is 0.
+
+```{r, eval = TRUE}
+plot(CVlasso)
+```
+
+According to graph, as the logarithm of lambda value increases, mean squared error increases polynominaly, and after specific MSE it stays same.
+
+```{r, eval = TRUE}
+coef(CVlasso, s = "lambda.min")
+```
+
+According to coefficients result, it is observed that if lambda is equal to zero it does not affect model improvement. As mentioned before, following equation is used to minimize loss function in Lasso.
+
+\[\lambda*\sum^p_{j=1}|w_j|\]
+
+When the equation is taken into consideration, the result gives the zero value when the lambda value equals zero.
+
+\[0*\sum^p_{j=1}|w_j| = 0\]
+
+It can be interpreted as there is no need for feature selection.
+
+## Part 8
+
+All three models present different aproaches to fitting same data. The stepAIC selects models based on Akaike Information Criterion and it selected model with 63 variables. While LASSO model with optimal $\lambda$ selected all possible parameters (100). This indicates that in Lasso regresssion the lowest MSE is reached when no penalty is included ($\lambda = 0$). 
+
+# Appendix
+
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
