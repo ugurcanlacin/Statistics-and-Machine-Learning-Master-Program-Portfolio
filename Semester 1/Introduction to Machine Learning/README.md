@@ -6,15 +6,24 @@ In this course, I, [Milda Poceviciute](https://github.com/poceviciute) and [Henr
 
 I have learned so much things in this course, so I will write down everything which I think it is useful. It is also helpful to remind me whenever I need.
 
-- Lab 1
+### Lab 1
 In this lab, we were asked to solve 3 assignments, which are about K-NN Algorithm, Cross Validation, Linear Regression and Regularization.
 
--- Assignment 1
+#### Assignment 1
 We are given spambase.xlsx data set which contains information about the frequency of various words, characters etc for a total of 2740 e-mails. These emails have been manually classified as spams or regular emails. The assignment wanted us to build spam filter model by using K-NN algorithm. 
-- We implemented that algorithm to achieve our goal. 
-- We tried different K parameters and compared misclassification rates.
-- We also tried kknn() package for same purpose and compared result with previous steps.
-- We analyzed ROC curves and sensitivity and specifity.
+- Implemented that algorithm to achieve our goal. 
+- Tried different K parameters and compared misclassification rates.
+- Tried kknn() package for same purpose and compared result with previous steps.
+- Analyzed ROC curves and sensitivity and specifity.
+
+#### Assignment 3
+- Feature selection (best subset selection) in linear regression by using k-fold cross-validation
+
+#### Assignment 4
+- Bias-variance tradeoff investigation with MSE
+- stepAIC usage.
+- Ridge regression
+- LASSO model with optimal \lambda using cross validation
 
 ## Labs
 
