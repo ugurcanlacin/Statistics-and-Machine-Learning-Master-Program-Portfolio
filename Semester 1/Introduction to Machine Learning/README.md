@@ -51,28 +51,25 @@ In this lab, we were asked to solve 2 assignments, which are about Ensemble Meth
 #### Assignment 2
 - Implemented EM algorithm for mixtures of multivariate Benouilli distributions.
 
-## Labs
 
-[Lab 1](ML_Lab1_Group/)
+### ===> [Lab 2 Block 2](ML_Lab2_Block2_Group/)
+In this lab, we were asked to solve 2 assignments, which are about GAM and GLM models with spline function, nearest shrunken centroid classification, elastic net, support vector machine, Benjamini-Hochberg method.
 
-- a
+#### Assignment 1
+- Applied GAM model.
+- Examined spline function to find trend.
 
-
-[Lab 2](ML_Lab2_Group/)
-
-- a
-
-
-[Lab 1 Block 2](ML_Lab1_Block2_Group/)
-
-- a
+#### Assignment 2
+- Applied nearest shrunken centroid classification to see how many feature are selected.
+- Applied SVM and elastic net and compared with previous result.
+- Applied Benjamini-Hochberg method to see which features correspond to the rejected hypotheses.
 
 
-[Lab 2 Block 2](ML_Lab2_Block2_Group/)
+### ===> [Lab 3 Block 1](ML_Lab3_Block1_Group/)
+In this lab, we were asked to solve 2 assignments, which are about Kernel methods and neural networks.
 
-- a
+#### Assignment 1
+- Implemented a kernel method to predict the hourly temperatures for a date and place in Sweden.
 
-
-[Lab 3 Block 1](ML_Lab3_Block1_Group/)
-
-- a
+#### Assignment 2
+- Trained a neural network to learn the trigonometric sine function.
