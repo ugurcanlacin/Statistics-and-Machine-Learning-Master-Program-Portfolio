@@ -6,12 +6,11 @@ In this course, I, [Milda Poceviciute](https://github.com/poceviciute) and [Henr
 
 I have learned so much things in this course, so I will write down everything which I think it is useful. It is also helpful to remind me whenever I need.
 
-### ===> Lab 1
+### ===> [Lab 1](ML_Lab1_Group/)
 In this lab, we were asked to solve 3 assignments, which are about K-NN Algorithm, Cross Validation, Linear Regression and Regularization.
 
 #### Assignment 1
-We are given spambase.xlsx data set which contains information about the frequency of various words, characters etc for a total of 2740 e-mails. These emails have been manually classified as spams or regular emails. The assignment wanted us to build spam filter model by using K-NN algorithm. 
-- Implemented that algorithm to achieve our goal. 
+- Implemented K-NN algorithm to achieve our goal. 
 - Tried different K parameters and compared misclassification rates.
 - Tried kknn() package for same purpose and compared result with previous steps.
 - Analyzed ROC curves and sensitivity and specifity.
@@ -24,6 +23,25 @@ We are given spambase.xlsx data set which contains information about the frequen
 - stepAIC usage.
 - Ridge regression
 - LASSO model with optimal \lambda using cross validation
+
+### ===> [Lab 2](ML_Lab2_Group/)
+In this lab, we were asked to solve 3 assignments, which are about LDA, Logistic Regression, Deviance-Gini Index comparison, Decision Trees, Naive Bayes, Confidence band for decision tree, non-parametric bootstrap, parametric bootstrap.
+
+#### Assignment 1
+- Decision boundary analysis to use LDA
+- LDA vs Logistic Regression comparison
+
+#### Assignment 2
+- Deviance and Gini index comparison for evaluation
+- Finding ptimal Decision Tree depth
+- Appliyng Naive Bayes algorithm
+- Comparison confusion matrices for all algorithms which are used.
+
+#### Assignment 3
+- Applied decision tree with cross-validation.
+- Computeed 95% confidence band for both non-parametric and parametric bootstrap
+- Result evaluation.
+
 
 ## Labs
 
