@@ -42,6 +42,14 @@ In this lab, we were asked to solve 3 assignments, which are about LDA, Logistic
 - Computeed 95% confidence band for both non-parametric and parametric bootstrap
 - Result evaluation.
 
+### ===> [Lab 1 Block 2](ML_Lab1_Block2_Group/)
+In this lab, we were asked to solve 2 assignments, which are about Ensemble Methods and Expectation Maximization algorithms
+
+#### Assignment 1
+- Adaboost and Random Forest algorithms comparison with number of trees from 10 to 100.
+
+#### Assignment 2
+- Implemented EM algorithm for mixtures of multivariate Benouilli distributions.
 
 ## Labs
 
