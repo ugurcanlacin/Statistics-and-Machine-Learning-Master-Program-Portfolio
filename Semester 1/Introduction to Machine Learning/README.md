@@ -6,7 +6,7 @@ In this course, I, [Milda Poceviciute](https://github.com/poceviciute) and [Henr
 
 I have learned so much things in this course, so I will write down everything which I think it is useful. It is also helpful to remind me whenever I need.
 
-### Lab 1
+### ### Lab 1 ###
 In this lab, we were asked to solve 3 assignments, which are about K-NN Algorithm, Cross Validation, Linear Regression and Regularization.
 
 #### Assignment 1
